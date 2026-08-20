@@ -2,3 +2,4 @@
 /* Place each interactive cell on a board-line intersection. */
 .board{display:block}
 .cell{position:absolute;width:calc(100% / 14);height:calc(100% / 14);transform:translate(-50%,-50%);padding:0}
+.board{background-position:0 0}
