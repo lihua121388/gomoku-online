@@ -34,3 +34,11 @@ document.querySelector('#restartBtn').onclick = () => socket.emit('restart', (re
 document.querySelector('#leaveBtn').onclick = () => { location.reload(); };
 socket.on('state', draw);
 socket.on('disconnect', () => { if (!game.classList.contains('hidden')) notify('网络连接已断开，请刷新页面重试。'); });
+
+const boardObserver = new MutationObserver(() => [...board.children].forEach((cell, index) => {
+  const row = Math.floor(index / 15);
+  const col = index % 15;
+  cell.style.left = `${(col / 14) * 100}%`;
+  cell.style.top = `${(row / 14) * 100}%`;
+}));
+boardObserver.observe(board, { childList: true });
