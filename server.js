@@ -21,9 +21,9 @@ function makeCode() {
 }
 
 function emptyBoard() { return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(null)); }
-function newRoom(code) { return { code, board: emptyBoard(), players: new Map(), turn: 'black', winner: null, ended: false, notice: '' }; }
+function newRoom(code) { return { code, board: emptyBoard(), players: new Map(), history: [], turn: 'black', winner: null, ended: false, notice: '', undoRequest: null, scores: { black: 0, white: 0 } }; }
 function state(room) {
-  return { code: room.code, board: room.board, turn: room.turn, winner: room.winner, ended: room.ended, notice: room.notice, players: [...room.players].map(([id, color]) => ({ id, color, online: io.sockets.sockets.has(id) })) };
+  return { code: room.code, board: room.board, turn: room.turn, winner: room.winner, ended: room.ended, notice: room.notice, undoRequest: room.undoRequest ? { from: room.undoRequest.from, color: room.undoRequest.color } : null, scores: room.scores, players: [...room.players].map(([id, color]) => ({ id, color, online: io.sockets.sockets.has(id) })) };
 }
 function broadcast(room) { io.to(room.code).emit('state', state(room)); }
 function validPosition(row, col) { return Number.isInteger(row) && Number.isInteger(col) && row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE; }
@@ -72,8 +72,42 @@ io.on('connection', (socket) => {
     if (room.turn !== color) return callback({ ok: false, message: '还没轮到你落子。' });
     if (!validPosition(row, col) || room.board[row][col]) return callback({ ok: false, message: '这个位置不能落子。' });
     room.board[row][col] = color;
-    if (hasFive(room.board, row, col, color)) { room.winner = color; room.ended = true; }
+    room.history.push({ row, col, color });
+    if (hasFive(room.board, row, col, color)) { room.winner = color; room.ended = true; room.scores[color] += 1; }
     else room.turn = color === 'black' ? 'white' : 'black';
+    callback({ ok: true });
+    broadcast(room);
+  });
+
+  socket.on('requestUndo', (callback = () => {}) => {
+    const code = [...socket.rooms].find((id) => id !== socket.id);
+    const room = code && rooms.get(code);
+    const color = room && room.players.get(socket.id);
+    if (!room || !color) return callback({ ok: false, message: '你还没有加入房间。' });
+    if (!room.history.length) return callback({ ok: false, message: '还没有可以悔的棋。' });
+    if (room.history[room.history.length - 1].color !== color) return callback({ ok: false, message: '只能申请悔掉自己刚落下的棋。' });
+    if (room.undoRequest) return callback({ ok: false, message: '已经有一个悔棋申请，请等待对方回应。' });
+    room.undoRequest = { from: socket.id, color };
+    room.notice = '';
+    callback({ ok: true });
+    broadcast(room);
+  });
+
+  socket.on('respondUndo', (accept, callback = () => {}) => {
+    const code = [...socket.rooms].find((id) => id !== socket.id);
+    const room = code && rooms.get(code);
+    if (!room || !room.undoRequest) return callback({ ok: false, message: '没有待处理的悔棋申请。' });
+    if (room.undoRequest.from === socket.id) return callback({ ok: false, message: '不能回应自己的悔棋申请。' });
+    if (accept) {
+      const move = room.history.pop();
+      if (room.winner) room.scores[room.winner] = Math.max(0, room.scores[room.winner] - 1);
+      room.board[move.row][move.col] = null;
+      room.turn = move.color;
+      room.winner = null;
+      room.ended = false;
+      room.notice = '悔棋成功，轮到刚才落子的一方。';
+    } else room.notice = '对方拒绝了悔棋申请。';
+    room.undoRequest = null;
     callback({ ok: true });
     broadcast(room);
   });
@@ -83,7 +117,7 @@ io.on('connection', (socket) => {
     const room = code && rooms.get(code);
     if (!room || !room.players.has(socket.id)) return callback({ ok: false, message: '你还没有加入房间。' });
     if (room.players.size < 2) return callback({ ok: false, message: '等待另一位玩家加入后再开局。' });
-    room.board = emptyBoard(); room.turn = 'black'; room.winner = null; room.ended = false;
+    room.board = emptyBoard(); room.history = []; room.turn = 'black'; room.winner = null; room.ended = false; room.undoRequest = null; room.notice = '';
     broadcast(room); callback({ ok: true });
   });
 
