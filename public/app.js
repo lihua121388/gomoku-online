@@ -42,3 +42,21 @@ const boardObserver = new MutationObserver(() => [...board.children].forEach((ce
   cell.style.top = `${(row / 14) * 100}%`;
 }));
 boardObserver.observe(board, { childList: true });
+
+const undoButton = document.querySelector('#undoBtn');
+socket.on('state', (state) => {
+  document.querySelector('#blackScore').textContent = `${state.scores?.black || 0} 胜`;
+  document.querySelector('#whiteScore').textContent = `${state.scores?.white || 0} 胜`;
+  if (!state.undoRequest) {
+    undoButton.textContent = '↶ 申请悔棋';
+    undoButton.onclick = () => socket.emit('requestUndo', (result) => { if (!result.ok) notify(result.message); });
+  } else if (state.undoRequest.from === socket.id) {
+    undoButton.textContent = '等待对方同意…';
+    undoButton.onclick = () => notify('已发出悔棋申请，请等待对方回应。');
+    document.querySelector('#turnBanner').textContent = '已发出悔棋申请 · 等待对方回应';
+  } else {
+    undoButton.textContent = '同意悔棋';
+    undoButton.onclick = () => socket.emit('respondUndo', true, (result) => { if (!result.ok) notify(result.message); });
+    document.querySelector('#turnBanner').textContent = '对方申请悔棋 · 点击“同意悔棋”';
+  }
+});
