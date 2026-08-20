@@ -60,3 +60,24 @@ socket.on('state', (state) => {
     document.querySelector('#turnBanner').textContent = '对方申请悔棋 · 点击“同意悔棋”';
   }
 });
+
+const commentBubble = document.querySelector('#commentBubble');
+const spectatorComments = [
+  '“这一手很稳，先把中路看住。”',
+  '“别急着追，边线也可能藏着机会。”',
+  '“他在试探你的防守。”',
+  '“漂亮，连续两步的威胁已经出现了。”',
+  '“我会重点留意右上角。”',
+  '“五子棋最重要的是耐心。”'
+];
+let commentIndex = 0;
+function nextSpectatorComment() {
+  if (!commentBubble || game.classList.contains('hidden')) return;
+  commentIndex = (commentIndex + 1) % spectatorComments.length;
+  commentBubble.textContent = spectatorComments[commentIndex];
+  commentBubble.style.animation = 'none';
+  void commentBubble.offsetWidth;
+  commentBubble.style.animation = 'bubble-in .35s ease';
+}
+setTimeout(nextSpectatorComment, 4200);
+setInterval(nextSpectatorComment, 12000);
