@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>落子 · 联机五子棋</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar"><div class="brand"><span class="brand-mark">✦</span><span>落子</span></div><div class="online-dot"><i></i>实时联机</div></header>
+      <section class="hero"><p class="eyebrow">TWO PLAYER GOMOKU</p><h1>一局棋，<em>两个人。</em></h1><p>创建房间，邀请朋友，专注于每一步。</p></section>
+      <section id="lobby" class="panel lobby-panel"><div class="panel-title"><span class="step">01</span><div><h2>开始一局</h2><p>输入房间码加入，或创建一个新房间。</p></div></div><div class="lobby-actions"><button id="createBtn" class="primary">创建房间 <span>↗</span></button><div class="join-row"><input id="roomInput" maxlength="4" placeholder="房间码" aria-label="房间码" /><button id="joinBtn" class="secondary">加入房间</button></div></div><p id="lobbyMessage" class="message"></p></section>
+      <section id="game" class="game-layout hidden"><div class="game-main"><div class="room-heading"><div><p class="eyebrow">CURRENT ROOM</p><h2>房间 <span id="roomCode">----</span></h2></div><button id="copyBtn" class="copy-button">复制房间码</button></div><div id="turnBanner" class="turn-banner"></div><div class="board-wrap"><div id="board" class="board" role="grid" aria-label="15乘15五子棋棋盘"></div></div><button id="restartBtn" class="restart">↻ 重新开局</button></div><aside class="side-panel"><div class="player-card active" id="blackCard"><div class="player-top"><span class="stone black-stone"></span><span>黑棋</span><b>先手</b></div><strong id="blackStatus">等待加入</strong></div><div class="player-card" id="whiteCard"><div class="player-top"><span class="stone white-stone"></span><span>白棋</span></div><strong id="whiteStatus">等待加入</strong></div><div class="rules"><h3>怎么玩</h3><p>横、竖或斜线连成五子即可获胜。</p><p>黑棋先行，双方轮流落子。</p></div><button id="leaveBtn" class="text-button">退出房间</button></aside></section>
+      <footer><span>落子 · 简洁的双人五子棋</span><span>服务器权威 · 实时同步</span></footer>
+    </main>
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/socket.io/socket.io.js"></script><script src="/app.js"></script>
+  </body>
+</html>
